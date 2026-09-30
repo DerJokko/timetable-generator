@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OWO – interaktiver Stundenplan</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+    <header>
+        <div class="header-inner">
+            <div>
+                <h1>Physik WiSe-26/27 – interaktiver Stundenplan</h1>
+                <div class="subtitle">Erstelle interaktiv Deinen Stundenplan. © DerJokko</div>
+            </div>
+            <div class="header-actions">
+                <button id="export-png" type="button">PNG exportieren</button>
+                <button id="reset" type="button">Auswahl zurücksetzen</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="toolbar">
+            <span class="label">Kurse:</span>
+            <button class="filter" data-course="Ex I">Ex I</button>
+            <button class="filter" data-course="Ana I">Ana I</button>
+            <button class="filter" data-course="RM">RM</button>
+            <button class="filter" data-course="LA">LA</button>
+            <button class="filter" data-course="Grundpraktikum">Grundpraktikum</button>
+            <button id="select-all-vl" type="button">Alle VL auswählen</button>
+            <span class="help">Ausgewählter Block = schwarz umrandet · Alternativen desselben Kurses werden
+                abgeschwächt.</span>
+        </div>
+
+        <div class="status" id="status">Keine Auswahl – alle Veranstaltungen werden angezeigt.</div>
+
+        <div class="schedule-wrap">
+            <div class="schedule" id="schedule">
+                <div></div>
+                <div class="day">Montag</div>
+                <div class="day">Dienstag</div>
+                <div class="day">Mittwoch</div>
+                <div class="day">Donnerstag</div>
+                <div class="day">Freitag</div>
+
+                <div class="time" style="grid-column:1;grid-row:2 / 4">08:00<br>–<br>09:40</div>
+                <div class="cell" style="grid-column:2;grid-row:2 / 4"></div>
+                <div class="event" data-course="Ex I" style="grid-column:3;grid-row:2 / 4;background:var(--blue)">
+                    <strong>Ex I<br><br>VL</strong>
+                </div>
+                <div class="event" data-course="Ana I" style="grid-column:4;grid-row:2 / 4;background:var(--lime)">Ana
+                    I<br><small>UE<br><br>12</small></div>
+                <div class="event" data-course="Ex I" style="grid-column:5;grid-row:2 / 4;background:var(--blue)">
+                    <strong>Ex I<br><br>VL</strong>
+                </div>
+                <div class="cell" style="grid-column:6;grid-row:2 / 4"></div>
+
+                <div class="time" style="grid-column:1;grid-row:4 / 6">09:50<br>–<br>11:30</div>
+                <div class="cell" style="grid-column:2;grid-row:4 / 6"></div>
+                <div class="event" data-course="Ana I" style="grid-column:3;grid-row:4 / 6;background:var(--green)">
+                    <strong>Ana I<br><br>VL</strong>
+                </div>
+                <div class="event" data-course="RM" style="grid-column:4;grid-row:4 / 6;background:var(--yellow)">
+                    RM<br>UE<br><br>C</div>
+                <div class="event" data-course="Ana I" style="grid-column:4;grid-row:4 / 6;background:var(--lime)">Ana
+                    I<br>UE<br><br>1/11/14/15</div>
+                <div class="event" data-course="Ana I" style="grid-column:5;grid-row:4 / 6;background:var(--green)">
+                    <strong>Ana I<br><br>VL</strong>
+                </div>
+                <div class="event" data-course="Ex I" style="grid-column:6;grid-row:4 / 6;background:var(--lightblue)">
+                    Ex I<br>UE<br><br>B</div>
+                <div class="event" data-course="Ana I" data-kind="Tutorium"
+                    style="grid-column:6;grid-row:4 / 6;background:var(--lime)">Ana I<br>Tutorium</div>
+
+                <div class="time" style="grid-column:1;grid-row:6 / 8">11:40<br>–<br>13:20</div>
+                <div class="event" data-course="Ex I" style="grid-column:2;grid-row:6 / 8;background:var(--lightblue)">
+                    Ex I<br>UE<br><br>A/D</div>
+                <div class="event" data-course="RM" style="grid-column:2;grid-row:6 / 8;background:var(--yellow)">
+                    RM<br>UE<br><br>A</div>
+                <div class="event" data-course="Ex I" style="grid-column:3;grid-row:6 / 8;background:var(--lightblue)">
+                    Ex I<br>UE<br><br>E</div>
+                <div class="event" data-course="Ana I" style="grid-column:3;grid-row:6 / 8;background:var(--lime)">Ana
+                    I<br>UE<br><br>2/13</div>
+                <div class="event" data-course="RM" style="grid-column:4;grid-row:6 / 8;background:var(--yellow)">
+                    RM<br>UE<br><br>B</div>
+                <div class="event" data-course="Ana I" style="grid-column:4;grid-row:6 / 8;background:var(--lime)">Ana
+                    I<br>UE<br><br>3/5</div>
+                <div class="event" data-course="RM" style="grid-column:5;grid-row:6 / 8;background:var(--yellow)">
+                    RM<br>UE<br><br>E</div>
+                <div class="event" data-course="LA" style="grid-column:5;grid-row:6 / 8;background:#f8c39a">
+                    LA<br>UE<br><br>1/2</div>
+                <div class="event" data-course="LA" style="grid-column:6;grid-row:6 / 8;background:#f8c39a">
+                    LA<br>UE<br><br>3/4/6</div>
+
+                <div class="time" style="grid-column:1;grid-row:8 / 10">13:30<br>–<br>15:10</div>
+                <div class="cell" style="grid-column:2;grid-row:8 / 10"></div>
+                <div class="event" data-course="Ana I" style="grid-column:3;grid-row:8 / 10;background:var(--lime)">Ana
+                    I<br>UE<br><br>4/6/8</div>
+                <div class="event" data-course="LA" style="grid-column:4 / 5;grid-row:8 / 10;background:var(--orange)">
+                    <strong>LA<br><br>VL</strong>
+                </div>
+                <div class="cell" style="grid-column:5;grid-row:8 / 9"></div>
+                <div class="event" data-course="Grundpraktikum"
+                    style="grid-column:5;grid-row:9 / 12;background:var(--purple)">
+                    <strong>Grundpraktikum<br><br>14:00–17:00</strong>
+                </div>
+                <div class="event" data-course="RM" style="grid-column:6;grid-row:8 / 10;background:var(--yellow)">
+                    RM<br>UE<br><br>D</div>
+
+                <div class="time" style="grid-column:1;grid-row:10 / 12">15:20<br>–<br>17:00</div>
+                <div class="event" data-course="Ana I" style="grid-column:2;grid-row:10 / 12;background:var(--lime)">Ana
+                    I<br>UE<br><br>7<br><small>16:15–17:55</small></div>
+                <div class="event" data-course="Ex I"
+                    style="grid-column:3;grid-row:10 / 12;background:var(--lightblue)">Ex I<br>UE<br><br>C</div>
+                <div class="event" data-course="RM" style="grid-column:4;grid-row:10 / 12;background:#f5f53d">
+                    <strong>RM<br><br>VL</strong>
+                </div>
+                <div class="event" data-course="LA" style="grid-column:4;grid-row:10 / 12;background:#f8c39a">
+                    LA<br>UE<br><br>5</div>
+                <div class="event" data-course="Ana I" style="grid-column:4;grid-row:10 / 12;background:var(--lime)">Ana
+                    I<br>UE<br><br>16</div>
+                <div class="cell" style="grid-column:5;grid-row:12 / 14"></div>
+                <div class="cell" style="grid-column:6;grid-row:10 / 12"></div>
+
+                <div class="time" style="grid-column:1;grid-row:12 / 14">17:10<br>–<br>18:50</div>
+                <div class="cell" style="grid-column:2;grid-row:12 / 14"></div>
+                <div class="cell" style="grid-column:3;grid-row:12 / 14"></div>
+                <div class="cell" style="grid-column:4;grid-row:12 / 14"></div>
+                <div class="cell" style="grid-column:5;grid-row:12 / 14"></div>
+                <div class="cell" style="grid-column:6;grid-row:12 / 14"></div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <span><i class="dot" style="background:var(--blue)"></i>Ex I</span>
+            <span><i class="dot" style="background:var(--lime)"></i>Ana I</span>
+            <span><i class="dot" style="background:var(--yellow)"></i>RM</span>
+            <span><i class="dot" style="background:var(--orange)"></i>LA</span>
+            <span><i class="dot" style="background:var(--purple)"></i>Grundpraktikum</span>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

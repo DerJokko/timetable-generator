@@ -1,0 +1,264 @@
+:root {
+    --border: #b8b8b8;
+    --text: #171717;
+    --muted: #777;
+    --bg: #f5f6f8;
+    --blue: #3eadd8;
+    --green: #a9d72e;
+    --lightblue: #8fd0e8;
+    --yellow: #ffffad;
+    --orange: #f58a2e;
+    --purple: #aaa6f0;
+    --lime: #d1eb93;
+}
+
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--text);
+    background: var(--bg)
+}
+
+header {
+    background: white;
+    border-bottom: 1px solid #ddd;
+    padding: 18px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 20
+}
+
+.header-inner {
+    max-width: 1500px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px
+}
+
+h1 {
+    font-size: 22px;
+    margin: 0 0 4px
+}
+
+.subtitle {
+    color: #666;
+    font-size: 14px
+}
+
+button {
+    border: 1px solid #bbb;
+    background: white;
+    border-radius: 8px;
+    padding: 9px 14px;
+    cursor: pointer;
+    font-size: 14px
+}
+
+button:hover {
+    background: #f0f0f0
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0
+}
+
+main {
+    max-width: 1500px;
+    margin: 20px auto;
+    padding: 0 16px
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px
+}
+
+.toolbar .label {
+    font-weight: 700;
+    margin-right: 4px
+}
+
+.filter {
+    transition: .15s
+}
+
+.filter.active {
+    background: #111;
+    color: white;
+    border-color: #111
+}
+
+.help {
+    margin-left: auto;
+    color: #666;
+    font-size: 13px
+}
+
+.schedule-wrap {
+    overflow: auto;
+    background: white;
+    border: 1px solid #aaa;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px #0000000d
+}
+
+.schedule {
+    width: 100%;
+    min-width: 1054px;
+    display: grid;
+    grid-template-columns: 104px repeat(5, minmax(190px, 1fr));
+    grid-template-rows: 52px repeat(12, 48px)
+}
+
+.day {
+    background: #e7e7e7;
+    border-right: 1px solid #aaa;
+    border-bottom: 1px solid #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 500
+}
+
+.time {
+    background: #f4f4f4;
+    border-right: 1px solid #aaa;
+    border-bottom: 1px solid #aaa;
+    padding: 7px 5px;
+    font-size: 12px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: pre-line
+}
+
+.cell {
+    border-right: 1px solid #aaa;
+    border-bottom: 1px solid #aaa;
+    background: #fff
+}
+
+.event {
+    margin: 0 0 0 var(--lane-offset, 0%);
+    width: var(--lane-width, calc(100% - 4px));
+    justify-self: start;
+    border: 1px solid #777;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 5px;
+    line-height: 1.15;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    z-index: 2;
+    transition: opacity .18s, filter .18s, transform .12s, box-shadow .12s;
+    position: relative
+}
+
+.event:hover {
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px #0003;
+    z-index: 5
+}
+
+.event strong {
+    font-weight: 700
+}
+
+.event small {
+    font-size: 12px
+}
+
+.event.selected {
+    outline: 3px solid #111;
+    outline-offset: -3px;
+    box-shadow: 0 0 0 2px white inset, 0 4px 12px #0004;
+    z-index: 8
+}
+
+.event.same-kind {
+    opacity: .25;
+    filter: grayscale(1)
+}
+
+.event.dimmed {
+    opacity: .18;
+    filter: grayscale(1)
+}
+
+.event.other-course {
+    opacity: .12;
+    filter: grayscale(1)
+}
+
+.event.hidden {
+    visibility: hidden;
+    pointer-events: none
+}
+
+.legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #444
+}
+
+.dot {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 1px solid #777;
+    vertical-align: -2px;
+    margin-right: 5px
+}
+
+.status {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px
+}
+
+.status b {
+    font-weight: 700
+}
+
+@media(max-width:700px) {
+    header {
+        padding: 14px
+    }
+
+    .header-inner {
+        align-items: flex-start
+    }
+
+    .help {
+        width: 100%;
+        margin-left: 0
+    }
+
+    main {
+        margin-top: 12px;
+        padding: 0 8px
+    }
+}
