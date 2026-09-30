@@ -1,6 +1,7 @@
 # Timetable Generator
 
 Interaktiver Stundenplan für das Physik-Wintersemester 2026/27. Veranstaltungen lassen sich auswählen, um mögliche Kurskombinationen zu planen.
+Ausprobieren: [https://www.derjokko.github.io/timetable-generator/](https://derjokko.github.io/timetable-generator/)
 
 ## Verwendung
 
