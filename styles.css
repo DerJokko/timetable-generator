@@ -115,9 +115,9 @@ main {
 
 .schedule {
     width: 100%;
-    min-width: 1054px;
+    min-width: 880px;
     display: grid;
-    grid-template-columns: 104px repeat(5, minmax(190px, 1fr));
+    grid-template-columns: 80px repeat(5, minmax(160px, 1fr));
     grid-template-rows: 52px repeat(12, 48px)
 }
 

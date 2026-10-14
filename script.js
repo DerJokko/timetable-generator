@@ -201,10 +201,22 @@ function layoutOverlaps() {
                 event.style.setProperty('--lane', lane);
             });
             const laneCount = laneEnds.length;
+            const selectedEvents = cluster.filter(event => selected.has(event));
+            const commonStart = Math.max(...cluster.map(event => placementOf(event).rowStart));
+            const commonEnd = Math.min(...cluster.map(event => placementOf(event).rowEnd));
+            const hasThreeWayOverlap = cluster.length === 3 && commonStart < commonEnd;
+            const laneWidths = hasThreeWayOverlap && laneCount === 3 && selectedEvents.length === 1
+                ? cluster.map(event => selected.has(event) ? 0.5 : 0.25)
+                : cluster.map(() => 1 / laneCount);
+            const laneOffsets = [];
+            laneWidths.reduce((offset, width, lane) => {
+                laneOffsets[lane] = offset;
+                return offset + width;
+            }, 0);
             cluster.forEach(event => {
                 const lane = Number(event.style.getPropertyValue('--lane'));
-                event.style.setProperty('--lane-width', `calc(100% / ${laneCount} - 4px)`);
-                event.style.setProperty('--lane-offset', `${lane * 100 / laneCount}%`);
+                event.style.setProperty('--lane-width', `calc(${laneWidths[lane] * 100}% - 4px)`);
+                event.style.setProperty('--lane-offset', `${laneOffsets[lane] * 100}%`);
             });
             cluster = [];
             clusterEnd = -Infinity;
@@ -236,6 +248,7 @@ function render() {
         });
         if (event.getAttribute('role') === 'button') event.setAttribute('aria-pressed', String(selected.has(event)));
     });
+    layoutOverlaps();
     filters.forEach(filter => filter.classList.toggle('active', filter.dataset.course === activeFilter));
 
     const requirements = new Map();
