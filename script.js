@@ -1,9 +1,15 @@
 const events = [...document.querySelectorAll('.event')];
 const filters = [...document.querySelectorAll('.filter')];
 const status = document.querySelector('#status');
+const conflictDialog = document.querySelector('#conflict-dialog');
+const conflictMessage = document.querySelector('#conflict-message');
+const conflictEvents = document.querySelector('#conflict-events');
+const cancelConflict = document.querySelector('#cancel-conflict');
+const confirmConflict = document.querySelector('#confirm-conflict');
 const selected = new Set();
 const selectedGroups = new Map();
 let activeFilter = null;
+let pendingSelection = null;
 
 events.forEach(event => {
     const groupLabel = event.querySelector('.group-label');
@@ -32,6 +38,7 @@ events.forEach(event => {
         options.append(option);
     });
     groupLabel.replaceWith(options);
+    event.classList.add('has-group-options');
     event.setAttribute('role', 'group');
     event.setAttribute('aria-label', `${event.dataset.course} UE – Gruppe wählen`);
 });
@@ -47,13 +54,28 @@ function chooseEvent(event, group) {
     const replaces = kind === 'UE'
         ? [...selected].filter(chosen => chosen.dataset.course === event.dataset.course && kindOf(chosen) === kind)
         : [];
-    const conflict = [...selected].find(chosen => {
+    const conflicts = [...selected].filter(chosen => {
         return !replaces.includes(chosen) && overlaps(event, chosen) && !(kind === 'VL' && kindOf(chosen) === 'VL');
     });
-    if (conflict) {
-        status.textContent = `Zeitkonflikt: ${event.dataset.course} ${kindOf(event)} überschneidet sich mit ${conflict.dataset.course} ${kindOf(conflict)}. Für diesen Zeitslot kann nur ein Kurs gewählt werden.`;
+    if (conflicts.length) {
+        pendingSelection = { event, group, replaces };
+        const requestedGroup = group
+            || event.querySelector('.group-option')?.dataset.group
+            || event.textContent.match(/Gruppe\s+(\d+)/)?.[1];
+        conflictMessage.textContent = `${event.dataset.course} ${kind}${requestedGroup ? ` (Gruppe ${requestedGroup})` : ''} überschneidet sich mit Deiner Auswahl:`;
+        conflictEvents.replaceChildren(...conflicts.map(conflict => {
+            const item = document.createElement('li');
+            const selectedGroup = selectedGroups.get(conflict);
+            item.textContent = `${conflict.dataset.course} ${kindOf(conflict)}${selectedGroup ? ` (Gruppe ${selectedGroup})` : ''}`;
+            return item;
+        }));
+        conflictDialog.showModal();
         return;
     }
+    commitSelection(event, group, replaces);
+}
+
+function commitSelection(event, group, replaces) {
     replaces.forEach(chosen => {
         selected.delete(chosen);
         selectedGroups.delete(chosen);
@@ -171,30 +193,14 @@ events.forEach(event => {
         event.setAttribute('role', 'button');
     }
     event.addEventListener('click', () => {
-        const kind = kindOf(event);
         if (selected.has(event)) {
             selected.delete(event);
             selectedGroups.delete(event);
+            render();
         } else {
-            const replaces = kind === 'UE'
-                ? [...selected].filter(chosen => chosen.dataset.course === event.dataset.course && kindOf(chosen) === 'UE')
-                : [];
-            const conflict = [...selected].find(chosen => {
-                return !replaces.includes(chosen) && overlaps(event, chosen) && !(kind === 'VL' && kindOf(chosen) === 'VL');
-            });
-            if (conflict) {
-                status.textContent = `Zeitkonflikt: ${event.dataset.course} ${kindOf(event)} überschneidet sich mit ${conflict.dataset.course} ${kindOf(conflict)}. Für diesen Zeitslot kann nur ein Kurs gewählt werden.`;
-                return;
-            }
-            replaces.forEach(chosen => {
-                selected.delete(chosen);
-                selectedGroups.delete(chosen);
-            });
-            selected.add(event);
             const defaultGroup = event.querySelector('.group-option')?.dataset.group;
-            if (defaultGroup) selectedGroups.set(event, defaultGroup);
+            chooseEvent(event, defaultGroup);
         }
-        render();
     });
     if (!hasGroupOptions) {
         event.addEventListener('keydown', keyboardEvent => {
@@ -204,6 +210,18 @@ events.forEach(event => {
             }
         });
     }
+});
+
+cancelConflict.addEventListener('click', () => conflictDialog.close());
+confirmConflict.addEventListener('click', () => {
+    if (!pendingSelection) return;
+    const { event, group, replaces } = pendingSelection;
+    pendingSelection = null;
+    conflictDialog.close();
+    commitSelection(event, group, replaces);
+});
+conflictDialog.addEventListener('close', () => {
+    pendingSelection = null;
 });
 
 filters.forEach(filter => filter.addEventListener('click', () => {
@@ -261,8 +279,9 @@ function exportScheduleAsPng() {
         const y = titleHeight + rect.top - originY;
         const style = getComputedStyle(element);
         const text = element.dataset.originalText
-            ? element.dataset.originalText.replace(element.dataset.groupLabel, selectedGroups.get(element) || element.dataset.groupLabel)
+            ? element.dataset.originalText.replace(element.dataset.groupLabel, '').trim()
             : element.innerText.trim();
+        const groupOptions = element.querySelectorAll('.group-option');
         if (!text && !element.classList.contains('cell')) return;
 
         context.save();
@@ -302,6 +321,27 @@ function exportScheduleAsPng() {
             const textHeight = lines.length * lineHeight;
             lines.forEach((line, index) => context.fillText(line, x + rect.width / 2, y + (rect.height - textHeight) / 2 + index * lineHeight + lineHeight / 2, maxWidth));
         }
+        groupOptions.forEach(option => {
+            const optionRect = option.getBoundingClientRect();
+            const optionX = padding + optionRect.left - originX;
+            const optionY = titleHeight + optionRect.top - originY;
+            const optionStyle = getComputedStyle(option);
+            const isUnselectedGroup = selected.has(element) && selectedGroups.get(element) !== option.dataset.group;
+
+            context.save();
+            if (isUnselectedGroup) context.globalAlpha *= 0.25;
+            context.fillStyle = optionStyle.backgroundColor;
+            context.fillRect(optionX, optionY, optionRect.width, optionRect.height);
+            context.strokeStyle = optionStyle.borderColor;
+            context.lineWidth = 1;
+            context.strokeRect(optionX + 0.5, optionY + 0.5, optionRect.width - 1, optionRect.height - 1);
+            context.fillStyle = optionStyle.color;
+            context.font = `${optionStyle.fontWeight} ${optionStyle.fontSize} ${optionStyle.fontFamily}`;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(option.innerText.trim(), optionX + optionRect.width / 2, optionY + optionRect.height / 2);
+            context.restore();
+        });
         if (element.classList.contains('selected')) {
             context.strokeStyle = '#111111';
             context.lineWidth = 3;

@@ -53,7 +53,7 @@
                     <strong>Ex I<br><br>VL</strong>
                 </div>
                 <div class="event" data-course="Ana I" style="grid-column:4;grid-row:2 / 4;background:var(--lime)">Ana
-                    I<br><small>UE<br><br>12</small></div>
+                    I<br>UE<br><br>12</div>
                 <div class="event" data-course="Ex I" style="grid-column:5;grid-row:2 / 4;background:var(--blue)">
                     <strong>Ex I<br><br>VL</strong>
                 </div>
@@ -92,15 +92,15 @@
                 <div class="event" data-course="RM" style="grid-column:5;grid-row:6 / 8;background:var(--yellow)">
                     RM<br>UE<br><br>E</div>
                 <div class="event" data-course="LA" title="Gruppe 5 · Joschua Moeller · Mi. 11:40 · S103/209 · 21.10"
-                    style="grid-column:4;grid-row:6 / 8;background:#f8c39a">LA<br>UE<br><br>Gruppe 5</div>
+                    style="grid-column:4;grid-row:6 / 8;background:#f8c39a">LA<br>UE<br><br>5</div>
                 <div class="event" data-course="LA" title="Gruppe 1 · Eliane Sturm · Do. 11:40 · S103/017 · 22.10"
-                    style="grid-column:5;grid-row:6 / 8;background:#f8c39a">LA<br>UE<br><br>Gruppe 1</div>
+                    style="grid-column:5;grid-row:6 / 8;background:#f8c39a">LA<br>UE<br><br>1</div>
                 <div class="event" data-course="LA" title="Gruppe 2 · Benjamin Jürgens · Do. 08:00 · S101/A5 · 22.10"
-                    style="grid-column:5;grid-row:2 / 4;background:#f8c39a">LA<br>UE<br><br>Gruppe 2</div>
+                    style="grid-column:5;grid-row:2 / 4;background:#f8c39a">LA<br>UE<br><br>2</div>
                 <div class="event" data-course="LA" title="Gruppe 4 · Benjamin Jürgens · Fr. 08:00 · S103/121 · 23.10"
-                    style="grid-column:6;grid-row:2 / 4;background:#f8c39a">LA<br>UE<br><br>Gruppe 4</div>
+                    style="grid-column:6;grid-row:2 / 4;background:#f8c39a">LA<br>UE<br><br>4</div>
                 <div class="event" data-course="LA" title="Gruppe 3 · Eliane Sturm · Fr. 09:50 · S103/209 · 23.10"
-                    style="grid-column:6;grid-row:4 / 6;background:#f8c39a">LA<br>UE<br><br>Gruppe 3</div>
+                    style="grid-column:6;grid-row:4 / 6;background:#f8c39a">LA<br>UE<br><br>3</div>
 
                 <div class="time" style="grid-column:1;grid-row:8 / 10">13:30<br>–<br>15:10</div>
                 <div class="cell" style="grid-column:2;grid-row:8 / 10"></div>
@@ -118,8 +118,8 @@
                     RM<br>UE<br><br>D</div>
 
                 <div class="time" style="grid-column:1;grid-row:10 / 12">15:20<br>–<br>17:00</div>
-                <div class="event" data-course="Ana I" style="grid-column:2;grid-row:10 / 12;background:var(--lime)">Ana
-                    I<br>UE<br><br>7<br><small>16:15–17:55</small></div>
+                <div class="event" data-course="Ana I" style="grid-column:2;grid-row:11 / 13;background:var(--lime)">Ana
+                    I<br>UE<br>7<br><small>16:15–17:55</small></div>
                 <div class="event" data-course="Ex I"
                     style="grid-column:3;grid-row:10 / 12;background:var(--lightblue)">Ex I<br>UE<br><br>C</div>
                 <div class="event" data-course="RM" style="grid-column:4;grid-row:10 / 12;background:#f5f53d">
@@ -147,6 +147,19 @@
             <span><i class="dot" style="background:var(--purple)"></i>Grundpraktikum</span>
         </div>
     </main>
+
+    <dialog class="conflict-dialog" id="conflict-dialog" aria-labelledby="conflict-title" aria-describedby="conflict-message">
+        <div class="conflict-dialog-content">
+            <h2 id="conflict-title">Zeitkonflikt</h2>
+            <p id="conflict-message">Diese Veranstaltung überschneidet sich zeitlich mit Deiner Auswahl:</p>
+            <ul id="conflict-events"></ul>
+            <p>Möchtest Du sie trotzdem auswählen?</p>
+            <div class="conflict-dialog-actions">
+                <button id="cancel-conflict" type="button">Abbrechen</button>
+                <button id="confirm-conflict" class="primary" type="button">Trotzdem auswählen</button>
+            </div>
+        </div>
+    </dialog>
 
     <script src="script.js"></script>
 </body>
