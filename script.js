@@ -17,7 +17,7 @@ const courseColors = {
     'Ana I': { VL: 'var(--green)', UE: 'var(--lime)', Tutorium: 'var(--lime)' },
     RM: { VL: '#f5f53d', UE: 'var(--yellow)' },
     LA: { VL: 'var(--orange)', UE: '#f8c39a' },
-    Grundpraktikum: { Praktikum: 'var(--purple)' }
+    'GP I': { Praktikum: 'var(--purple)' }
 };
 
 function validateEvents(data) {
