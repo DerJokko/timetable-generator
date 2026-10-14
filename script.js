@@ -2,12 +2,66 @@ const events = [...document.querySelectorAll('.event')];
 const filters = [...document.querySelectorAll('.filter')];
 const status = document.querySelector('#status');
 const selected = new Set();
+const selectedGroups = new Map();
 let activeFilter = null;
+
+events.forEach(event => {
+    const groupLabel = event.querySelector('.group-label');
+    if (!groupLabel) return;
+
+    const groups = groupLabel.textContent.trim().split('/');
+    if (groups.length < 2) return;
+
+    event.dataset.originalText = event.innerText.trim();
+    event.dataset.groupLabel = groupLabel.textContent.trim();
+    const options = document.createElement('div');
+    options.className = 'group-options';
+    options.setAttribute('aria-label', `${event.dataset.course} UE – Gruppe wählen`);
+    groups.forEach(group => {
+        const option = document.createElement('button');
+        option.className = 'group-option';
+        option.type = 'button';
+        option.textContent = group;
+        option.dataset.group = group;
+        option.setAttribute('aria-label', `Gruppe ${group} auswählen`);
+        option.setAttribute('aria-pressed', 'false');
+        option.addEventListener('click', clickEvent => {
+            clickEvent.stopPropagation();
+            chooseEvent(event, group);
+        });
+        options.append(option);
+    });
+    groupLabel.replaceWith(options);
+    event.setAttribute('role', 'group');
+    event.setAttribute('aria-label', `${event.dataset.course} UE – Gruppe wählen`);
+});
 
 function kindOf(event) {
     if (event.dataset.kind) return event.dataset.kind;
     const label = event.innerText.match(/\b(VL|UE)\b/);
     return label ? label[1] : 'GP';
+}
+
+function chooseEvent(event, group) {
+    const kind = kindOf(event);
+    const replaces = kind === 'UE'
+        ? [...selected].filter(chosen => chosen.dataset.course === event.dataset.course && kindOf(chosen) === kind)
+        : [];
+    const conflict = [...selected].find(chosen => {
+        return !replaces.includes(chosen) && overlaps(event, chosen) && !(kind === 'VL' && kindOf(chosen) === 'VL');
+    });
+    if (conflict) {
+        status.textContent = `Zeitkonflikt: ${event.dataset.course} ${kindOf(event)} überschneidet sich mit ${conflict.dataset.course} ${kindOf(conflict)}. Für diesen Zeitslot kann nur ein Kurs gewählt werden.`;
+        return;
+    }
+    replaces.forEach(chosen => {
+        selected.delete(chosen);
+        selectedGroups.delete(chosen);
+    });
+    selected.add(event);
+    if (group) selectedGroups.set(event, group);
+    else selectedGroups.delete(event);
+    render();
 }
 
 function placementOf(event) {
@@ -74,7 +128,15 @@ function render() {
         event.classList.toggle('selected', selected.has(event));
         event.classList.toggle('same-kind', chosenAlternative);
         event.classList.toggle('dimmed', Boolean(activeFilter && event.dataset.course !== activeFilter));
-        event.setAttribute('aria-pressed', String(selected.has(event)));
+        if (event.querySelector('.group-options')) {
+            event.querySelectorAll('.group-option').forEach(option => {
+                const isSelected = selected.has(event) && selectedGroups.get(event) === option.dataset.group;
+                option.classList.toggle('active', isSelected);
+                option.setAttribute('aria-pressed', String(isSelected));
+            });
+        } else {
+            event.setAttribute('aria-pressed', String(selected.has(event)));
+        }
     });
     filters.forEach(filter => filter.classList.toggle('active', filter.dataset.course === activeFilter));
 
@@ -87,10 +149,12 @@ function render() {
     const summary = [...requirements].map(([course, kinds]) => {
         const progress = [...kinds].map(kind => {
             const courseEvents = events.filter(event => event.dataset.course === course && kindOf(event) === kind);
+            const chosenEvent = courseEvents.find(event => selected.has(event));
             const selectedCount = courseEvents.filter(event => selected.has(event)).length;
             if (kind === 'VL') return `VL ${selectedCount}/${courseEvents.length}`;
             const label = kind === 'GP' ? 'Praktikum' : kind;
-            return `${label} ${selectedCount ? '✓' : '–'}`;
+            const group = chosenEvent && selectedGroups.get(chosenEvent);
+            return `${label}${group ? ` ${group}` : ''} ${selectedCount ? '✓' : '–'}`;
         }).join(' / ');
         return `<b>${course}</b>: ${progress}`;
     }).join(' &nbsp; · &nbsp; ');
@@ -98,12 +162,19 @@ function render() {
 }
 
 events.forEach(event => {
-    event.tabIndex = 0;
-    event.setAttribute('role', 'button');
+    const hasGroupOptions = Boolean(event.querySelector('.group-options'));
+    if (hasGroupOptions) {
+        event.setAttribute('role', 'group');
+        event.removeAttribute('tabindex');
+    } else {
+        event.tabIndex = 0;
+        event.setAttribute('role', 'button');
+    }
     event.addEventListener('click', () => {
         const kind = kindOf(event);
         if (selected.has(event)) {
             selected.delete(event);
+            selectedGroups.delete(event);
         } else {
             const replaces = kind === 'UE'
                 ? [...selected].filter(chosen => chosen.dataset.course === event.dataset.course && kindOf(chosen) === 'UE')
@@ -115,17 +186,24 @@ events.forEach(event => {
                 status.textContent = `Zeitkonflikt: ${event.dataset.course} ${kindOf(event)} überschneidet sich mit ${conflict.dataset.course} ${kindOf(conflict)}. Für diesen Zeitslot kann nur ein Kurs gewählt werden.`;
                 return;
             }
-            replaces.forEach(chosen => selected.delete(chosen));
+            replaces.forEach(chosen => {
+                selected.delete(chosen);
+                selectedGroups.delete(chosen);
+            });
             selected.add(event);
+            const defaultGroup = event.querySelector('.group-option')?.dataset.group;
+            if (defaultGroup) selectedGroups.set(event, defaultGroup);
         }
         render();
     });
-    event.addEventListener('keydown', keyboardEvent => {
-        if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
-            keyboardEvent.preventDefault();
-            event.click();
-        }
-    });
+    if (!hasGroupOptions) {
+        event.addEventListener('keydown', keyboardEvent => {
+            if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                keyboardEvent.preventDefault();
+                event.click();
+            }
+        });
+    }
 });
 
 filters.forEach(filter => filter.addEventListener('click', () => {
@@ -141,6 +219,7 @@ document.querySelector('#select-all-vl').addEventListener('click', () => {
 
 document.querySelector('#reset').addEventListener('click', () => {
     selected.clear();
+    selectedGroups.clear();
     activeFilter = null;
     render();
 });
@@ -181,7 +260,9 @@ function exportScheduleAsPng() {
         const x = padding + rect.left - originX;
         const y = titleHeight + rect.top - originY;
         const style = getComputedStyle(element);
-        const text = element.innerText.trim();
+        const text = element.dataset.originalText
+            ? element.dataset.originalText.replace(element.dataset.groupLabel, selectedGroups.get(element) || element.dataset.groupLabel)
+            : element.innerText.trim();
         if (!text && !element.classList.contains('cell')) return;
 
         context.save();

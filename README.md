@@ -7,7 +7,7 @@ Ausprobieren: [https://www.derjokko.github.io/timetable-generator/](https://derj
 
 `index.html` im Browser öffnen. Es ist keine Installation erforderlich.
 
-- Veranstaltungen durch Anklicken auswählen; VL, UE und Tutorium werden getrennt behandelt.
+- Veranstaltungen durch Anklicken auswählen; VL, UE und Tutorium werden getrennt behandelt. Bei UE-Angeboten mit mehreren Gruppen (z. B. `4/6/8`) die gewünschte Gruppe direkt anklicken.
 - Mit **Alle VL auswählen** alle Vorlesungsangebote modulübergreifend markieren.
 - Mit **PNG exportieren** den Stundenplan herunterladen.
 
