@@ -295,33 +295,31 @@ function drawText(context, text, rect, style, originX, originY, alpha = 1) {
     const fontSize = Number.parseFloat(style.fontSize) || 14;
     const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.2;
     const weight = Number(style.fontWeight) >= 600 || style.fontWeight === 'bold' ? '700' : '400';
+    const maxWidth = Math.max(12, rect.width - 12);
     context.save();
     context.globalAlpha *= alpha;
     context.font = `${weight} ${fontSize}px ${style.fontFamily}`;
     context.fillStyle = style.color;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    const maxWidth = Math.max(12, rect.width - 8);
-    const lines = text.split(/\r?\n/).flatMap(line => {
-        const words = line.trim().split(/\s+/).filter(Boolean);
-        if (!words.length) return [];
-        const wrapped = [];
+    const lines = [];
+    text.split(/\r?\n/).forEach(paragraph => {
+        const words = paragraph.trim().split(/\s+/).filter(Boolean);
         let current = '';
         words.forEach(word => {
             const candidate = current ? `${current} ${word}` : word;
-            if (current && context.measureText(candidate).width > maxWidth) {
-                wrapped.push(current);
-                current = word;
-            } else {
+            if (context.measureText(candidate).width <= maxWidth) {
                 current = candidate;
+                return;
             }
+            if (current) lines.push(current);
+            current = word;
         });
-        wrapped.push(current);
-        return wrapped;
+        if (current) lines.push(current);
     });
     const textHeight = lines.length * lineHeight;
     lines.forEach((line, index) => {
-        context.fillText(line, x + rect.width / 2, y + (rect.height - textHeight) / 2 + index * lineHeight + lineHeight / 2, maxWidth);
+        context.fillText(line, x + rect.width / 2, y + (rect.height - textHeight) / 2 + index * lineHeight + lineHeight / 2);
     });
     context.restore();
 }
@@ -390,7 +388,13 @@ function exportScheduleAsPng() {
                         context.restore();
                     });
                 } else {
-                    drawText(context, child.textContent, child.getBoundingClientRect(), getComputedStyle(child), scheduleRect.left, scheduleRect.top);
+                    const childRect = child.getBoundingClientRect();
+                    drawText(context, child.textContent, {
+                        left: rect.left,
+                        top: childRect.top,
+                        width: rect.width,
+                        height: childRect.height
+                    }, getComputedStyle(child), scheduleRect.left, scheduleRect.top);
                 }
             });
             if (element.classList.contains('selected')) {
