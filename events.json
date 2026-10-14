@@ -1,0 +1,263 @@
+[
+  {
+    "Name": "Ex I",
+    "Art": "VL",
+    "Gruppe": [],
+    "Anmerkung": "",
+    "Tag": 2,
+    "StundeVon": 1,
+    "StundeBis": 2
+  },
+  {
+    "Name": "Ana I",
+    "Art": "UE",
+    "Gruppe": ["12"],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 1,
+    "StundeBis": 2
+  },
+  {
+    "Name": "Ex I",
+    "Art": "VL",
+    "Gruppe": [],
+    "Anmerkung": "",
+    "Tag": 4,
+    "StundeVon": 1,
+    "StundeBis": 2
+  },
+  {
+    "Name": "LA",
+    "Art": "UE",
+    "Gruppe": ["2"],
+    "Anmerkung": "S101/A5",
+    "Tag": 4,
+    "StundeVon": 1,
+    "StundeBis": 2
+  },
+  {
+    "Name": "Ana I",
+    "Art": "VL",
+    "Gruppe": [],
+    "Anmerkung": "",
+    "Tag": 2,
+    "StundeVon": 3,
+    "StundeBis": 4
+  },
+  {
+    "Name": "RM",
+    "Art": "UE",
+    "Gruppe": ["C"],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 3,
+    "StundeBis": 4
+  },
+  {
+    "Name": "Ana I",
+    "Art": "UE",
+    "Gruppe": ["1", "11", "14", "15"],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 3,
+    "StundeBis": 4
+  },
+  {
+    "Name": "Ana I",
+    "Art": "VL",
+    "Gruppe": [],
+    "Anmerkung": "",
+    "Tag": 4,
+    "StundeVon": 3,
+    "StundeBis": 4
+  },
+  {
+    "Name": "Ex I",
+    "Art": "UE",
+    "Gruppe": ["B"],
+    "Anmerkung": "",
+    "Tag": 5,
+    "StundeVon": 3,
+    "StundeBis": 4
+  },
+  {
+    "Name": "Ana I",
+    "Art": "Tutorium",
+    "Gruppe": [],
+    "Anmerkung": "",
+    "Tag": 5,
+    "StundeVon": 3,
+    "StundeBis": 4
+  },
+  {
+    "Name": "LA",
+    "Art": "UE",
+    "Gruppe": ["3"],
+    "Anmerkung": "S103/209",
+    "Tag": 5,
+    "StundeVon": 3,
+    "StundeBis": 4
+  },
+  {
+    "Name": "Ex I",
+    "Art": "UE",
+    "Gruppe": ["A", "D"],
+    "Anmerkung": "",
+    "Tag": 1,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "RM",
+    "Art": "UE",
+    "Gruppe": ["A"],
+    "Anmerkung": "",
+    "Tag": 1,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "Ex I",
+    "Art": "UE",
+    "Gruppe": ["E"],
+    "Anmerkung": "",
+    "Tag": 2,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "Ana I",
+    "Art": "UE",
+    "Gruppe": ["2", "13"],
+    "Anmerkung": "",
+    "Tag": 2,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "RM",
+    "Art": "UE",
+    "Gruppe": ["B"],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "Ana I",
+    "Art": "UE",
+    "Gruppe": ["3", "5"],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "LA",
+    "Art": "UE",
+    "Gruppe": ["5"],
+    "Anmerkung": "S103/209",
+    "Tag": 3,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "RM",
+    "Art": "UE",
+    "Gruppe": ["E"],
+    "Anmerkung": "",
+    "Tag": 4,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "LA",
+    "Art": "UE",
+    "Gruppe": ["1"],
+    "Anmerkung": "S103/017",
+    "Tag": 4,
+    "StundeVon": 5,
+    "StundeBis": 6
+  },
+  {
+    "Name": "Ana I",
+    "Art": "UE",
+    "Gruppe": ["4", "6", "8"],
+    "Anmerkung": "",
+    "Tag": 2,
+    "StundeVon": 7,
+    "StundeBis": 8
+  },
+  {
+    "Name": "LA",
+    "Art": "VL",
+    "Gruppe": [],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 7,
+    "StundeBis": 8
+  },
+  {
+    "Name": "Grundpraktikum",
+    "Art": "Praktikum",
+    "Gruppe": [],
+    "Anmerkung": "14:00–17:00",
+    "Tag": 4,
+    "StundeVon": 8,
+    "StundeBis": 10
+  },
+  {
+    "Name": "RM",
+    "Art": "UE",
+    "Gruppe": ["D"],
+    "Anmerkung": "",
+    "Tag": 5,
+    "StundeVon": 7,
+    "StundeBis": 8
+  },
+  {
+    "Name": "Ana I",
+    "Art": "UE",
+    "Gruppe": ["7"],
+    "Anmerkung": "16:15–17:55",
+    "Tag": 1,
+    "StundeVon": 10,
+    "StundeBis": 11
+  },
+  {
+    "Name": "Ex I",
+    "Art": "UE",
+    "Gruppe": ["C"],
+    "Anmerkung": "",
+    "Tag": 2,
+    "StundeVon": 9,
+    "StundeBis": 10
+  },
+  {
+    "Name": "RM",
+    "Art": "VL",
+    "Gruppe": [],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 9,
+    "StundeBis": 10
+  },
+  {
+    "Name": "LA",
+    "Art": "UE",
+    "Gruppe": ["4"],
+    "Anmerkung": "S103/121",
+    "Tag": 5,
+    "StundeVon": 1,
+    "StundeBis": 2
+  },
+  {
+    "Name": "Ana I",
+    "Art": "UE",
+    "Gruppe": ["16"],
+    "Anmerkung": "",
+    "Tag": 3,
+    "StundeVon": 9,
+    "StundeBis": 10
+  }
+]

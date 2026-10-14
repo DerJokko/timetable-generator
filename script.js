@@ -1,4 +1,4 @@
-const events = [...document.querySelectorAll('.event')];
+const schedule = document.querySelector('#schedule');
 const filters = [...document.querySelectorAll('.filter')];
 const status = document.querySelector('#status');
 const conflictDialog = document.querySelector('#conflict-dialog');
@@ -8,45 +8,135 @@ const cancelConflict = document.querySelector('#cancel-conflict');
 const confirmConflict = document.querySelector('#confirm-conflict');
 const selected = new Set();
 const selectedGroups = new Map();
+let events = [];
 let activeFilter = null;
 let pendingSelection = null;
 
-events.forEach(event => {
-    const groupLabel = event.querySelector('.group-label');
-    if (!groupLabel) return;
+const courseColors = {
+    'Ex I': { VL: 'var(--blue)', UE: 'var(--lightblue)' },
+    'Ana I': { VL: 'var(--green)', UE: 'var(--lime)', Tutorium: 'var(--lime)' },
+    RM: { VL: '#f5f53d', UE: 'var(--yellow)' },
+    LA: { VL: 'var(--orange)', UE: '#f8c39a' },
+    Grundpraktikum: { Praktikum: 'var(--purple)' }
+};
 
-    const groups = groupLabel.textContent.trim().split('/');
-    if (groups.length < 2) return;
-
-    event.dataset.originalText = event.innerText.trim();
-    event.dataset.groupLabel = groupLabel.textContent.trim();
-    const options = document.createElement('div');
-    options.className = 'group-options';
-    options.setAttribute('aria-label', `${event.dataset.course} UE – Gruppe wählen`);
-    groups.forEach(group => {
-        const option = document.createElement('button');
-        option.className = 'group-option';
-        option.type = 'button';
-        option.textContent = group;
-        option.dataset.group = group;
-        option.setAttribute('aria-label', `Gruppe ${group} auswählen`);
-        option.setAttribute('aria-pressed', 'false');
-        option.addEventListener('click', clickEvent => {
-            clickEvent.stopPropagation();
-            chooseEvent(event, group);
-        });
-        options.append(option);
+function validateEvents(data) {
+    if (!Array.isArray(data)) throw new Error('events.json muss eine Terminliste enthalten.');
+    data.forEach((event, index) => {
+        const prefix = `Termin ${index + 1}`;
+        if (typeof event.Name !== 'string' || !event.Name.trim()) throw new Error(`${prefix}: Name fehlt.`);
+        if (typeof event.Art !== 'string' || !event.Art.trim()) throw new Error(`${prefix}: Art fehlt.`);
+        if (!Array.isArray(event.Gruppe) || !event.Gruppe.every(group => typeof group === 'string')) {
+            throw new Error(`${prefix}: Gruppe muss eine Liste von Textwerten sein.`);
+        }
+        if (typeof event.Anmerkung !== 'string') throw new Error(`${prefix}: Anmerkung muss Text sein.`);
+        if (!Number.isInteger(event.Tag) || event.Tag < 1 || event.Tag > 5) {
+            throw new Error(`${prefix}: Tag muss eine Zahl von 1 bis 5 sein.`);
+        }
+        if (!Number.isInteger(event.StundeVon) || !Number.isInteger(event.StundeBis)
+            || event.StundeVon < 1 || event.StundeBis > 12 || event.StundeVon > event.StundeBis) {
+            throw new Error(`${prefix}: Stundenbereich muss zwischen 1 und 12 liegen und gültig sein.`);
+        }
     });
-    groupLabel.replaceWith(options);
-    event.classList.add('has-group-options');
-    event.setAttribute('role', 'group');
-    event.setAttribute('aria-label', `${event.dataset.course} UE – Gruppe wählen`);
-});
+}
+
+function buildEvent(record) {
+    const event = document.createElement('div');
+    event.className = 'event';
+    event.dataset.course = record.Name;
+    event.dataset.kind = record.Art;
+    event.dataset.group = record.Gruppe.length === 1 ? record.Gruppe[0] : '';
+    event.style.gridColumn = String(record.Tag + 1);
+    event.style.gridRow = `${record.StundeVon + 1} / ${record.StundeBis + 2}`;
+    event.style.background = courseColors[record.Name]?.[record.Art] || '#ddd';
+    if (record.Anmerkung) event.title = record.Anmerkung;
+
+    const name = document.createElement('span');
+    name.className = 'event-name';
+    name.textContent = record.Name;
+    event.append(name);
+
+    const kind = document.createElement('span');
+    kind.className = 'event-kind';
+    kind.textContent = record.Art;
+    event.append(kind);
+
+    if (record.Gruppe.length > 1) {
+        event.classList.add('has-group-options');
+        event.setAttribute('role', 'group');
+        event.setAttribute('aria-label', `${record.Name} ${record.Art} – Gruppe wählen`);
+        const options = document.createElement('div');
+        options.className = 'group-options';
+        options.setAttribute('aria-label', 'Gruppe wählen');
+        record.Gruppe.forEach(group => {
+            const option = document.createElement('button');
+            option.className = 'group-option';
+            option.type = 'button';
+            option.textContent = group;
+            option.dataset.group = group;
+            option.setAttribute('aria-label', `Gruppe ${group} auswählen`);
+            option.setAttribute('aria-pressed', 'false');
+            option.addEventListener('click', clickEvent => {
+                clickEvent.stopPropagation();
+                chooseEvent(event, group);
+            });
+            options.append(option);
+        });
+        event.append(options);
+    } else if (record.Gruppe.length === 1) {
+        const group = document.createElement('span');
+        group.className = 'event-group';
+        group.textContent = record.Gruppe[0];
+        event.append(group);
+    }
+
+    if (record.Anmerkung) {
+        const note = document.createElement('small');
+        note.className = 'event-note';
+        note.textContent = record.Anmerkung;
+        event.append(note);
+    }
+
+    if (record.Gruppe.length <= 1) {
+        event.tabIndex = 0;
+        event.setAttribute('role', 'button');
+    }
+    event.addEventListener('click', () => {
+        if (selected.has(event)) {
+            selected.delete(event);
+            selectedGroups.delete(event);
+            render();
+        } else {
+            chooseEvent(event, event.dataset.group || undefined);
+        }
+    });
+    if (record.Gruppe.length <= 1) {
+        event.addEventListener('keydown', keyboardEvent => {
+            if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                keyboardEvent.preventDefault();
+                event.click();
+            }
+        });
+    }
+    return event;
+}
 
 function kindOf(event) {
-    if (event.dataset.kind) return event.dataset.kind;
-    const label = event.innerText.match(/\b(VL|UE)\b/);
-    return label ? label[1] : 'GP';
+    return event.dataset.kind;
+}
+
+function placementOf(event) {
+    return {
+        day: Number(event.style.gridColumnStart),
+        rowStart: Number(event.style.gridRowStart),
+        rowEnd: Number(event.style.gridRowEnd)
+    };
+}
+
+function overlaps(first, second) {
+    const a = placementOf(first);
+    const b = placementOf(second);
+    return a.day === b.day && a.rowStart < b.rowEnd && b.rowStart < a.rowEnd;
 }
 
 function chooseEvent(event, group) {
@@ -59,10 +149,7 @@ function chooseEvent(event, group) {
     });
     if (conflicts.length) {
         pendingSelection = { event, group, replaces };
-        const requestedGroup = group
-            || event.querySelector('.group-option')?.dataset.group
-            || event.textContent.match(/Gruppe\s+(\d+)/)?.[1];
-        conflictMessage.textContent = `${event.dataset.course} ${kind}${requestedGroup ? ` (Gruppe ${requestedGroup})` : ''} überschneidet sich mit Deiner Auswahl:`;
+        conflictMessage.textContent = `${event.dataset.course} ${kind}${group ? ` (Gruppe ${group})` : ''} überschneidet sich mit Deiner Auswahl:`;
         conflictEvents.replaceChildren(...conflicts.map(conflict => {
             const item = document.createElement('li');
             const selectedGroup = selectedGroups.get(conflict);
@@ -86,23 +173,9 @@ function commitSelection(event, group, replaces) {
     render();
 }
 
-function placementOf(event) {
-    const style = event.style;
-    return {
-        day: Number(style.gridColumnStart),
-        rowStart: Number(style.gridRowStart),
-        rowEnd: Number(style.gridRowEnd)
-    };
-}
-
-function overlaps(first, second) {
-    const a = placementOf(first);
-    const b = placementOf(second);
-    return a.day === b.day && a.rowStart < b.rowEnd && b.rowStart < a.rowEnd;
-}
-
 function layoutOverlaps() {
     const byDay = new Map();
+    const lanePriority = { VL: 0, Tutorium: 1, UE: 2 };
     events.forEach(event => {
         const { day } = placementOf(event);
         if (!byDay.has(day)) byDay.set(day, []);
@@ -110,7 +183,11 @@ function layoutOverlaps() {
     });
 
     byDay.forEach(dayEvents => {
-        dayEvents.sort((a, b) => placementOf(a).rowStart - placementOf(b).rowStart);
+        dayEvents.sort((a, b) => {
+            const startDifference = placementOf(a).rowStart - placementOf(b).rowStart;
+            if (startDifference) return startDifference;
+            return (lanePriority[kindOf(a)] ?? 3) - (lanePriority[kindOf(b)] ?? 3);
+        });
         let cluster = [];
         let clusterEnd = -Infinity;
         const layoutCluster = () => {
@@ -146,19 +223,18 @@ function layoutOverlaps() {
 function render() {
     events.forEach(event => {
         const kind = kindOf(event);
-        const chosenAlternative = kind === 'UE' && [...selected].some(chosen => chosen !== event && chosen.dataset.course === event.dataset.course && kindOf(chosen) === kind);
+        const chosenAlternative = kind === 'UE' && [...selected].some(chosen => {
+            return chosen !== event && chosen.dataset.course === event.dataset.course && kindOf(chosen) === kind;
+        });
         event.classList.toggle('selected', selected.has(event));
         event.classList.toggle('same-kind', chosenAlternative);
         event.classList.toggle('dimmed', Boolean(activeFilter && event.dataset.course !== activeFilter));
-        if (event.querySelector('.group-options')) {
-            event.querySelectorAll('.group-option').forEach(option => {
-                const isSelected = selected.has(event) && selectedGroups.get(event) === option.dataset.group;
-                option.classList.toggle('active', isSelected);
-                option.setAttribute('aria-pressed', String(isSelected));
-            });
-        } else {
-            event.setAttribute('aria-pressed', String(selected.has(event)));
-        }
+        event.querySelectorAll('.group-option').forEach(option => {
+            const isSelected = selected.has(event) && selectedGroups.get(event) === option.dataset.group;
+            option.classList.toggle('active', isSelected);
+            option.setAttribute('aria-pressed', String(isSelected));
+        });
+        if (event.getAttribute('role') === 'button') event.setAttribute('aria-pressed', String(selected.has(event)));
     });
     filters.forEach(filter => filter.classList.toggle('active', filter.dataset.course === activeFilter));
 
@@ -174,7 +250,7 @@ function render() {
             const chosenEvent = courseEvents.find(event => selected.has(event));
             const selectedCount = courseEvents.filter(event => selected.has(event)).length;
             if (kind === 'VL') return `VL ${selectedCount}/${courseEvents.length}`;
-            const label = kind === 'GP' ? 'Praktikum' : kind;
+            const label = kind === 'Praktikum' ? 'Praktikum' : kind;
             const group = chosenEvent && selectedGroups.get(chosenEvent);
             return `${label}${group ? ` ${group}` : ''} ${selectedCount ? '✓' : '–'}`;
         }).join(' / ');
@@ -182,35 +258,6 @@ function render() {
     }).join(' &nbsp; · &nbsp; ');
     status.innerHTML = selected.size ? summary : 'Noch keine Veranstaltung ausgewählt. ' + summary;
 }
-
-events.forEach(event => {
-    const hasGroupOptions = Boolean(event.querySelector('.group-options'));
-    if (hasGroupOptions) {
-        event.setAttribute('role', 'group');
-        event.removeAttribute('tabindex');
-    } else {
-        event.tabIndex = 0;
-        event.setAttribute('role', 'button');
-    }
-    event.addEventListener('click', () => {
-        if (selected.has(event)) {
-            selected.delete(event);
-            selectedGroups.delete(event);
-            render();
-        } else {
-            const defaultGroup = event.querySelector('.group-option')?.dataset.group;
-            chooseEvent(event, defaultGroup);
-        }
-    });
-    if (!hasGroupOptions) {
-        event.addEventListener('keydown', keyboardEvent => {
-            if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
-                keyboardEvent.preventDefault();
-                event.click();
-            }
-        });
-    }
-});
 
 cancelConflict.addEventListener('click', () => conflictDialog.close());
 confirmConflict.addEventListener('click', () => {
@@ -242,8 +289,44 @@ document.querySelector('#reset').addEventListener('click', () => {
     render();
 });
 
+function drawText(context, text, rect, style, originX, originY, alpha = 1) {
+    const x = 16 + rect.left - originX;
+    const y = 58 + rect.top - originY;
+    const fontSize = Number.parseFloat(style.fontSize) || 14;
+    const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.2;
+    const weight = Number(style.fontWeight) >= 600 || style.fontWeight === 'bold' ? '700' : '400';
+    context.save();
+    context.globalAlpha *= alpha;
+    context.font = `${weight} ${fontSize}px ${style.fontFamily}`;
+    context.fillStyle = style.color;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    const maxWidth = Math.max(12, rect.width - 8);
+    const lines = text.split(/\r?\n/).flatMap(line => {
+        const words = line.trim().split(/\s+/).filter(Boolean);
+        if (!words.length) return [];
+        const wrapped = [];
+        let current = '';
+        words.forEach(word => {
+            const candidate = current ? `${current} ${word}` : word;
+            if (current && context.measureText(candidate).width > maxWidth) {
+                wrapped.push(current);
+                current = word;
+            } else {
+                current = candidate;
+            }
+        });
+        wrapped.push(current);
+        return wrapped;
+    });
+    const textHeight = lines.length * lineHeight;
+    lines.forEach((line, index) => {
+        context.fillText(line, x + rect.width / 2, y + (rect.height - textHeight) / 2 + index * lineHeight + lineHeight / 2, maxWidth);
+    });
+    context.restore();
+}
+
 function exportScheduleAsPng() {
-    const schedule = document.querySelector('#schedule');
     const legend = document.querySelector('.legend');
     const scheduleRect = schedule.getBoundingClientRect();
     const legendRect = legend.getBoundingClientRect();
@@ -271,17 +354,13 @@ function exportScheduleAsPng() {
     context.font = '14px Arial, Helvetica, sans-serif';
     context.fillText(document.querySelector('.subtitle').innerText, padding, 48);
 
-    const originX = scheduleRect.left;
-    const originY = scheduleRect.top;
     [...schedule.children].forEach(element => {
         const rect = element.getBoundingClientRect();
-        const x = padding + rect.left - originX;
-        const y = titleHeight + rect.top - originY;
+        const x = padding + rect.left - scheduleRect.left;
+        const y = titleHeight + rect.top - scheduleRect.top;
         const style = getComputedStyle(element);
-        const text = element.dataset.originalText
-            ? element.dataset.originalText.replace(element.dataset.groupLabel, '').trim()
-            : element.innerText.trim();
-        const groupOptions = element.querySelectorAll('.group-option');
+        const isEvent = element.classList.contains('event');
+        const text = element.innerText.trim();
         if (!text && !element.classList.contains('cell')) return;
 
         context.save();
@@ -292,60 +371,35 @@ function exportScheduleAsPng() {
         context.lineWidth = 1;
         context.strokeRect(x + 0.5, y + 0.5, Math.max(0, rect.width - 1), Math.max(0, rect.height - 1));
 
-        if (text) {
-            const fontSize = Number.parseFloat(style.fontSize) || 14;
-            const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.2;
-            const weight = style.fontWeight === '700' || Number(style.fontWeight) >= 600 ? '700' : '400';
-            context.font = `${weight} ${fontSize}px ${style.fontFamily}`;
-            context.fillStyle = style.color;
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            const maxWidth = Math.max(12, rect.width - 12);
-            const lines = text.split(/\r?\n/).flatMap(line => {
-                const words = line.trim().split(/\s+/).filter(Boolean);
-                if (!words.length) return [''];
-                const wrapped = [];
-                let current = '';
-                words.forEach(word => {
-                    const candidate = current ? `${current} ${word}` : word;
-                    if (current && context.measureText(candidate).width > maxWidth) {
-                        wrapped.push(current);
-                        current = word;
-                    } else {
-                        current = candidate;
-                    }
-                });
-                wrapped.push(current);
-                return wrapped;
+        if (isEvent) {
+            [...element.children].forEach(child => {
+                if (child.classList.contains('group-options')) {
+                    [...child.children].forEach(option => {
+                        const optionRect = option.getBoundingClientRect();
+                        const optionStyle = getComputedStyle(option);
+                        const unselected = selected.has(element) && selectedGroups.get(element) !== option.dataset.group;
+                        const optionX = padding + optionRect.left - scheduleRect.left;
+                        const optionY = titleHeight + optionRect.top - scheduleRect.top;
+                        context.save();
+                        if (unselected) context.globalAlpha *= 0.25;
+                        context.fillStyle = optionStyle.backgroundColor;
+                        context.fillRect(optionX, optionY, optionRect.width, optionRect.height);
+                        context.strokeStyle = optionStyle.borderColor;
+                        context.strokeRect(optionX + 0.5, optionY + 0.5, optionRect.width - 1, optionRect.height - 1);
+                        drawText(context, option.textContent, optionRect, optionStyle, scheduleRect.left, scheduleRect.top);
+                        context.restore();
+                    });
+                } else {
+                    drawText(context, child.textContent, child.getBoundingClientRect(), getComputedStyle(child), scheduleRect.left, scheduleRect.top);
+                }
             });
-            const textHeight = lines.length * lineHeight;
-            lines.forEach((line, index) => context.fillText(line, x + rect.width / 2, y + (rect.height - textHeight) / 2 + index * lineHeight + lineHeight / 2, maxWidth));
-        }
-        groupOptions.forEach(option => {
-            const optionRect = option.getBoundingClientRect();
-            const optionX = padding + optionRect.left - originX;
-            const optionY = titleHeight + optionRect.top - originY;
-            const optionStyle = getComputedStyle(option);
-            const isUnselectedGroup = selected.has(element) && selectedGroups.get(element) !== option.dataset.group;
-
-            context.save();
-            if (isUnselectedGroup) context.globalAlpha *= 0.25;
-            context.fillStyle = optionStyle.backgroundColor;
-            context.fillRect(optionX, optionY, optionRect.width, optionRect.height);
-            context.strokeStyle = optionStyle.borderColor;
-            context.lineWidth = 1;
-            context.strokeRect(optionX + 0.5, optionY + 0.5, optionRect.width - 1, optionRect.height - 1);
-            context.fillStyle = optionStyle.color;
-            context.font = `${optionStyle.fontWeight} ${optionStyle.fontSize} ${optionStyle.fontFamily}`;
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.fillText(option.innerText.trim(), optionX + optionRect.width / 2, optionY + optionRect.height / 2);
-            context.restore();
-        });
-        if (element.classList.contains('selected')) {
-            context.strokeStyle = '#111111';
-            context.lineWidth = 3;
-            context.strokeRect(x + 2, y + 2, rect.width - 4, rect.height - 4);
+            if (element.classList.contains('selected')) {
+                context.strokeStyle = '#111111';
+                context.lineWidth = 3;
+                context.strokeRect(x + 2, y + 2, rect.width - 4, rect.height - 4);
+            }
+        } else if (text) {
+            drawText(context, text, rect, style, scheduleRect.left, scheduleRect.top);
         }
         context.restore();
     });
@@ -385,5 +439,19 @@ function exportScheduleAsPng() {
 
 document.querySelector('#export-png').addEventListener('click', exportScheduleAsPng);
 
-layoutOverlaps();
-render();
+async function initialize() {
+    status.textContent = 'Termine werden geladen …';
+    const response = await fetch('./events.json');
+    if (!response.ok) throw new Error(`events.json konnte nicht geladen werden (HTTP ${response.status}).`);
+    const data = await response.json();
+    validateEvents(data);
+    events = data.map(buildEvent);
+    schedule.append(...events);
+    layoutOverlaps();
+    render();
+}
+
+initialize().catch(error => {
+    console.error('Stundenplan konnte nicht geladen werden:', error);
+    status.textContent = `Der Stundenplan konnte nicht geladen werden: ${error.message}`;
+});
