@@ -21,6 +21,7 @@ Anschließend `http://localhost:8000` im Browser öffnen.
 - Bei zeitlichen Überschneidungen kannst Du nach einer Warnung im Bestätigungsdialog entscheiden, ob Du die Auswahl trotzdem übernehmen möchtest.
 - Mit **Alle VL auswählen** alle Vorlesungsangebote modulübergreifend markieren.
 - Mit **PNG exportieren** den Stundenplan herunterladen.
+- Mit **Persönlichen Plan exportieren** einen eigenständig gerenderten, schmalen PNG-Stundenplan mit Mo–Fr, Uhrzeiten und ausschließlich ausgewählten Terminen speichern. Das Zeitraster zeigt immer den ganzen Tag von 08:00 bis 18:50, auch wenn am Anfang oder Ende keine ausgewählten Termine liegen. Bei Angeboten mit mehreren Gruppen erscheint nur die gewählte Gruppennummer; Anmerkungen werden ebenfalls übernommen.
 
 ## Dateien
 

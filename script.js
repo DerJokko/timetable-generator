@@ -46,6 +46,11 @@ function buildEvent(record) {
     event.dataset.course = record.Name;
     event.dataset.kind = record.Art;
     event.dataset.group = record.Gruppe.length === 1 ? record.Gruppe[0] : '';
+    event.dataset.defaultGroup = record.Gruppe[0] || '';
+    event.dataset.day = String(record.Tag);
+    event.dataset.slotStart = String(record.StundeVon);
+    event.dataset.slotEnd = String(record.StundeBis);
+    event.dataset.note = record.Anmerkung;
     event.style.gridColumn = String(record.Tag + 1);
     event.style.gridRow = `${record.StundeVon + 1} / ${record.StundeBis + 2}`;
     event.style.background = courseColors[record.Name]?.[record.Art] || '#ddd';
@@ -107,7 +112,7 @@ function buildEvent(record) {
             selectedGroups.delete(event);
             render();
         } else {
-            chooseEvent(event, event.dataset.group || undefined);
+            chooseEvent(event, event.dataset.group || event.dataset.defaultGroup || undefined);
         }
     });
     if (record.Gruppe.length <= 1) {
@@ -344,7 +349,8 @@ function exportScheduleAsPng() {
     const scale = 2;
     const padding = 16;
     const titleHeight = 58;
-    const width = Math.max(schedule.scrollWidth, scheduleRect.width);
+    const scheduleWidth = Math.max(schedule.scrollWidth, scheduleRect.width);
+    const width = scheduleWidth;
     const height = titleHeight + schedule.scrollHeight + legendRect.height + padding * 2;
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil((width + padding * 2) * scale);
@@ -366,21 +372,27 @@ function exportScheduleAsPng() {
     context.fillText(document.querySelector('.subtitle').innerText, padding, 48);
 
     [...schedule.children].forEach(element => {
+        const isEvent = element.classList.contains('event');
         const rect = element.getBoundingClientRect();
-        const x = padding + rect.left - scheduleRect.left;
+        const relativeLeft = rect.left - scheduleRect.left;
+        const exportRect = {
+            ...rect,
+            left: rect.left,
+            width: rect.width
+        };
+        const x = padding + relativeLeft;
         const y = titleHeight + rect.top - scheduleRect.top;
         const style = getComputedStyle(element);
-        const isEvent = element.classList.contains('event');
         const text = element.innerText.trim();
         if (!text && !element.classList.contains('cell')) return;
 
         context.save();
         context.globalAlpha = Number(style.opacity) || (style.opacity === '0' ? 0 : 1);
         context.fillStyle = style.backgroundColor === 'rgba(0, 0, 0, 0)' ? '#ffffff' : style.backgroundColor;
-        context.fillRect(x, y, rect.width, rect.height);
+        context.fillRect(x, y, exportRect.width, rect.height);
         context.strokeStyle = style.borderRightColor || '#b8b8b8';
         context.lineWidth = 1;
-        context.strokeRect(x + 0.5, y + 0.5, Math.max(0, rect.width - 1), Math.max(0, rect.height - 1));
+        context.strokeRect(x + 0.5, y + 0.5, Math.max(0, exportRect.width - 1), Math.max(0, rect.height - 1));
 
         if (isEvent) {
             [...element.children].forEach(child => {
@@ -389,23 +401,28 @@ function exportScheduleAsPng() {
                         const optionRect = option.getBoundingClientRect();
                         const optionStyle = getComputedStyle(option);
                         const unselected = selected.has(element) && selectedGroups.get(element) !== option.dataset.group;
+                        const exportOptionRect = {
+                            ...optionRect,
+                            left: optionRect.left,
+                            width: optionRect.width
+                        };
                         const optionX = padding + optionRect.left - scheduleRect.left;
                         const optionY = titleHeight + optionRect.top - scheduleRect.top;
                         context.save();
                         if (unselected) context.globalAlpha *= 0.25;
                         context.fillStyle = optionStyle.backgroundColor;
-                        context.fillRect(optionX, optionY, optionRect.width, optionRect.height);
+                        context.fillRect(optionX, optionY, exportOptionRect.width, optionRect.height);
                         context.strokeStyle = optionStyle.borderColor;
-                        context.strokeRect(optionX + 0.5, optionY + 0.5, optionRect.width - 1, optionRect.height - 1);
-                        drawText(context, option.textContent, optionRect, optionStyle, scheduleRect.left, scheduleRect.top);
+                        context.strokeRect(optionX + 0.5, optionY + 0.5, exportOptionRect.width - 1, optionRect.height - 1);
+                        drawText(context, option.textContent, exportOptionRect, optionStyle, scheduleRect.left, scheduleRect.top);
                         context.restore();
                     });
                 } else {
                     const childRect = child.getBoundingClientRect();
                     drawText(context, child.textContent, {
-                        left: rect.left,
+                        left: exportRect.left,
                         top: childRect.top,
-                        width: rect.width,
+                        width: exportRect.width,
                         height: childRect.height
                     }, getComputedStyle(child), scheduleRect.left, scheduleRect.top);
                 }
@@ -413,10 +430,10 @@ function exportScheduleAsPng() {
             if (element.classList.contains('selected')) {
                 context.strokeStyle = '#111111';
                 context.lineWidth = 3;
-                context.strokeRect(x + 2, y + 2, rect.width - 4, rect.height - 4);
+                context.strokeRect(x + 2, y + 2, exportRect.width - 4, rect.height - 4);
             }
         } else if (text) {
-            drawText(context, text, rect, style, scheduleRect.left, scheduleRect.top);
+            drawText(context, text, exportRect, style, scheduleRect.left, scheduleRect.top);
         }
         context.restore();
     });
@@ -454,7 +471,176 @@ function exportScheduleAsPng() {
     }, 'image/png');
 }
 
+function exportPersonalScheduleAsPng() {
+    if (!selected.size) {
+        status.textContent = 'Wähle zuerst mindestens einen Termin für Deinen persönlichen Plan aus.';
+        return;
+    }
+
+    const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr'];
+    const selectedEvents = [...selected].map(event => ({
+        event,
+        day: Number(event.dataset.day),
+        start: Number(event.dataset.slotStart),
+        end: Number(event.dataset.slotEnd),
+        group: selectedGroups.get(event) || event.dataset.group || event.dataset.defaultGroup,
+        note: event.dataset.note
+    })).sort((a, b) => a.day - b.day || a.start - b.start || a.end - b.end);
+    const firstSlot = 1;
+    const lastSlot = 12;
+    const scale = 2;
+    const padding = 12;
+    const timeWidth = 64;
+    const dayWidth = 84;
+    const headerHeight = 34;
+    const columnHeaderHeight = 24;
+    const slotHeight = 42;
+    const breakHeight = 6;
+    const width = padding * 2 + timeWidth + dayWidth * dayNames.length;
+    const rowTop = slot => headerHeight
+        + columnHeaderHeight
+        + (slot - firstSlot) * slotHeight
+        + (Math.floor((slot - 1) / 2) - Math.floor((firstSlot - 1) / 2)) * breakHeight;
+    const height = padding * 2 + rowTop(lastSlot) + slotHeight;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(width * scale);
+    canvas.height = Math.ceil(height * scale);
+    const context = canvas.getContext('2d');
+    if (!context) {
+        status.textContent = 'PNG-Export ist in diesem Browser nicht verfügbar.';
+        return;
+    }
+
+    context.scale(scale, scale);
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, width, height);
+    context.fillStyle = '#171717';
+    context.font = '700 18px Arial, Helvetica, sans-serif';
+    context.textAlign = 'left';
+    context.textBaseline = 'middle';
+    context.fillText('Mein persönlicher Stundenplan', padding, padding + headerHeight / 2);
+
+    const gridTop = padding + headerHeight;
+    context.font = '700 11px Arial, Helvetica, sans-serif';
+    context.textAlign = 'center';
+    context.fillStyle = '#e7e7e7';
+    context.fillRect(padding, gridTop, timeWidth + dayWidth * dayNames.length, columnHeaderHeight);
+    context.fillStyle = '#171717';
+    context.fillText('Zeit', padding + timeWidth / 2, gridTop + columnHeaderHeight / 2);
+    dayNames.forEach((day, index) => {
+        const x = padding + timeWidth + index * dayWidth;
+        context.fillText(day, x + dayWidth / 2, gridTop + columnHeaderHeight / 2);
+    });
+
+    for (let slot = firstSlot; slot <= lastSlot; slot++) {
+        const y = padding + rowTop(slot);
+        const slotStartMinutes = 8 * 60 + (slot - 1) * 55;
+        const slotEndMinutes = slotStartMinutes + 45;
+        const startLabel = `${String(Math.floor(slotStartMinutes / 60)).padStart(2, '0')}:${String(slotStartMinutes % 60).padStart(2, '0')}`;
+        const endLabel = `${String(Math.floor(slotEndMinutes / 60)).padStart(2, '0')}:${String(slotEndMinutes % 60).padStart(2, '0')}`;
+        context.fillStyle = '#f4f4f4';
+        context.fillRect(padding, y, timeWidth, slotHeight);
+        context.fillStyle = '#333';
+        context.font = '9px Arial, Helvetica, sans-serif';
+        context.textAlign = 'center';
+        context.fillText(`${startLabel}–${endLabel}`, padding + timeWidth / 2, y + slotHeight / 2);
+
+        for (let day = 1; day <= dayNames.length; day++) {
+            const x = padding + timeWidth + (day - 1) * dayWidth;
+            context.fillStyle = '#fff';
+            context.fillRect(x, y, dayWidth, slotHeight);
+            context.strokeStyle = '#b8b8b8';
+            context.lineWidth = 0.5;
+            context.strokeRect(x, y, dayWidth, slotHeight);
+        }
+        context.strokeStyle = '#b8b8b8';
+        context.strokeRect(padding, y, timeWidth, slotHeight);
+    }
+
+    const eventsByDay = new Map();
+    selectedEvents.forEach(item => {
+        if (!eventsByDay.has(item.day)) eventsByDay.set(item.day, []);
+        eventsByDay.get(item.day).push(item);
+    });
+    eventsByDay.forEach((dayEvents, day) => {
+        const laneEnds = [];
+        dayEvents.forEach(item => {
+            let lane = laneEnds.findIndex(end => end <= item.start);
+            if (lane === -1) lane = laneEnds.length;
+            laneEnds[lane] = item.end + 1;
+            item.lane = lane;
+        });
+        const laneCount = laneEnds.length;
+
+        dayEvents.forEach(item => {
+            const gap = 2;
+            const laneWidth = dayWidth / laneCount;
+            const x = padding + timeWidth + (day - 1) * dayWidth + item.lane * laneWidth + gap;
+            const y = padding + rowTop(item.start) + gap;
+            const endY = padding + rowTop(item.end + 1);
+            const boxHeight = Math.max(slotHeight - gap * 2, endY - y - gap - (item.end % 2 === 0 ? breakHeight : 0));
+            const boxWidth = laneWidth - gap * 2;
+            const eventStyle = getComputedStyle(item.event);
+            context.fillStyle = eventStyle.backgroundColor;
+            context.fillRect(x, y, boxWidth, boxHeight);
+            context.strokeStyle = '#777';
+            context.lineWidth = 1;
+            context.strokeRect(x + 0.5, y + 0.5, boxWidth - 1, boxHeight - 1);
+
+            const lines = [
+                `${item.event.dataset.course} · ${kindOf(item.event)}`,
+                item.group || '',
+                item.note || ''
+            ].filter(Boolean);
+            context.save();
+            context.beginPath();
+            context.rect(x + 2, y + 2, Math.max(0, boxWidth - 4), Math.max(0, boxHeight - 4));
+            context.clip();
+            context.fillStyle = '#171717';
+            context.font = `${laneCount > 1 ? 7 : 8}px Arial, Helvetica, sans-serif`;
+            context.textAlign = 'center';
+            context.textBaseline = 'top';
+            const lineHeight = laneCount > 1 ? 8 : 9;
+            const maxTextWidth = Math.max(8, boxWidth - 6);
+            let textY = y + 4;
+            lines.forEach(line => {
+                const wrapped = [];
+                let current = '';
+                [...line].forEach(character => {
+                    if (current && context.measureText(current + character).width > maxTextWidth) {
+                        wrapped.push(current);
+                        current = character;
+                    } else {
+                        current += character;
+                    }
+                });
+                if (current) wrapped.push(current);
+                wrapped.forEach(part => {
+                    context.fillText(part, x + boxWidth / 2, textY);
+                    textY += lineHeight;
+                });
+            });
+            context.restore();
+        });
+    });
+
+    canvas.toBlob(blob => {
+        if (!blob) {
+            status.textContent = 'Der persönliche PNG-Export ist fehlgeschlagen.';
+            return;
+        }
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Persoenlicher-Stundenplan-WiSe-2627.png';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }, 'image/png');
+}
+
 document.querySelector('#export-png').addEventListener('click', exportScheduleAsPng);
+document.querySelector('#export-personal-png').addEventListener('click', () => {
+    exportPersonalScheduleAsPng();
+});
 
 async function initialize() {
     status.textContent = 'Termine werden geladen …';
