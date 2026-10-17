@@ -376,9 +376,10 @@ function exportScheduleAsPng() {
         const rect = element.getBoundingClientRect();
         const relativeLeft = rect.left - scheduleRect.left;
         const exportRect = {
-            ...rect,
             left: rect.left,
-            width: rect.width
+            top: rect.top,
+            width: rect.width,
+            height: rect.height
         };
         const x = padding + relativeLeft;
         const y = titleHeight + rect.top - scheduleRect.top;
@@ -399,33 +400,32 @@ function exportScheduleAsPng() {
                 if (child.classList.contains('group-options')) {
                     [...child.children].forEach(option => {
                         const optionRect = option.getBoundingClientRect();
+                        const isSelectedGroup = selected.has(element)
+                            && selectedGroups.get(element) === option.dataset.group;
+                        const isUnselectedGroup = selected.has(element) && !isSelectedGroup;
                         const optionStyle = getComputedStyle(option);
-                        const unselected = selected.has(element) && selectedGroups.get(element) !== option.dataset.group;
-                        const exportOptionRect = {
-                            ...optionRect,
+                        drawText(context, option.textContent, {
                             left: optionRect.left,
-                            width: optionRect.width
-                        };
-                        const optionX = padding + optionRect.left - scheduleRect.left;
-                        const optionY = titleHeight + optionRect.top - scheduleRect.top;
-                        context.save();
-                        if (unselected) context.globalAlpha *= 0.25;
-                        context.fillStyle = optionStyle.backgroundColor;
-                        context.fillRect(optionX, optionY, exportOptionRect.width, optionRect.height);
-                        context.strokeStyle = optionStyle.borderColor;
-                        context.strokeRect(optionX + 0.5, optionY + 0.5, exportOptionRect.width - 1, optionRect.height - 1);
-                        drawText(context, option.textContent, exportOptionRect, optionStyle, scheduleRect.left, scheduleRect.top);
-                        context.restore();
+                            top: optionRect.top,
+                            width: optionRect.width,
+                            height: optionRect.height
+                        }, {
+                            fontSize: optionStyle.fontSize,
+                            lineHeight: optionStyle.lineHeight,
+                            fontWeight: isSelectedGroup ? '700' : optionStyle.fontWeight,
+                            fontFamily: optionStyle.fontFamily,
+                            color: '#171717'
+                        }, scheduleRect.left, scheduleRect.top, isUnselectedGroup ? 0.25 : 1);
                     });
-                } else {
-                    const childRect = child.getBoundingClientRect();
-                    drawText(context, child.textContent, {
-                        left: exportRect.left,
-                        top: childRect.top,
-                        width: exportRect.width,
-                        height: childRect.height
-                    }, getComputedStyle(child), scheduleRect.left, scheduleRect.top);
+                    return;
                 }
+                const childRect = child.getBoundingClientRect();
+                drawText(context, child.textContent, {
+                    left: exportRect.left,
+                    top: childRect.top,
+                    width: exportRect.width,
+                    height: childRect.height
+                }, getComputedStyle(child), scheduleRect.left, scheduleRect.top);
             });
             if (element.classList.contains('selected')) {
                 context.strokeStyle = '#111111';
