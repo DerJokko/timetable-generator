@@ -376,9 +376,10 @@ function exportScheduleAsPng() {
         const rect = element.getBoundingClientRect();
         const relativeLeft = rect.left - scheduleRect.left;
         const exportRect = {
-            ...rect,
             left: rect.left,
-            width: rect.width
+            top: rect.top,
+            width: rect.width,
+            height: rect.height
         };
         const x = padding + relativeLeft;
         const y = titleHeight + rect.top - scheduleRect.top;
@@ -402,9 +403,10 @@ function exportScheduleAsPng() {
                         const optionStyle = getComputedStyle(option);
                         const unselected = selected.has(element) && selectedGroups.get(element) !== option.dataset.group;
                         const exportOptionRect = {
-                            ...optionRect,
                             left: optionRect.left,
-                            width: optionRect.width
+                            top: optionRect.top,
+                            width: optionRect.width,
+                            height: optionRect.height
                         };
                         const optionX = padding + optionRect.left - scheduleRect.left;
                         const optionY = titleHeight + optionRect.top - scheduleRect.top;
