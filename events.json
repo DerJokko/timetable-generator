@@ -32,8 +32,8 @@
     "Gruppe": ["2"],
     "Anmerkung": "S101/A5",
     "Tag": 4,
-    "StundeVon": 1,
-    "StundeBis": 2
+    "StundeVon": 5,
+    "StundeBis": 6
   },
   {
     "Name": "Ana I",
@@ -95,8 +95,8 @@
     "Gruppe": ["3"],
     "Anmerkung": "S103/209",
     "Tag": 5,
-    "StundeVon": 3,
-    "StundeBis": 4
+    "StundeVon": 5,
+    "StundeBis": 6
   },
   {
     "Name": "Ex I",
@@ -158,8 +158,8 @@
     "Gruppe": ["5"],
     "Anmerkung": "S103/209",
     "Tag": 3,
-    "StundeVon": 5,
-    "StundeBis": 6
+    "StundeVon": 9,
+    "StundeBis": 10
   },
   {
     "Name": "RM",
@@ -248,8 +248,8 @@
     "Gruppe": ["4"],
     "Anmerkung": "S103/121",
     "Tag": 5,
-    "StundeVon": 1,
-    "StundeBis": 2
+    "StundeVon": 5,
+    "StundeBis": 6
   },
   {
     "Name": "Ana I",
